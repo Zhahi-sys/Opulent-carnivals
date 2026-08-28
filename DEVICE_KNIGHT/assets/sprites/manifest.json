@@ -1,0 +1,18 @@
+{
+  "spr_roaringknight_idle": {
+    "meta": { "w": 68, "h": 65, "ox": 34, "oy": 32 },
+    "files": ["../../../assets/sprites/enemies/knight/knight idle/spr_roaringknight_idle.png"]
+  },
+  "spr_knight_bullet_star_top": {
+    "meta": { "w": 61, "h": 57, "ox": 30, "oy": 28 },
+    "files": ["../../../assets/sprites/bullets/knight bullet sprites/spr_knight_bullet_star/spr_knight_bullet_star_0.png"]
+  },
+  "spr_knight_bullet_star_bottom": {
+    "meta": { "w": 61, "h": 57, "ox": 30, "oy": 28 },
+    "files": ["../../../assets/sprites/bullets/knight bullet sprites/spr_knight_bullet_star/spr_knight_bullet_star_1.png"]
+  },
+  "spr_knight_bullet_star": {
+    "meta": { "w": 61, "h": 57, "ox": 30, "oy": 28 },
+    "files": ["../../../assets/sprites/bullets/knight bullet sprites/spr_knight_bullet_star/spr_knight_bullet_star_0.png"]
+  }
+}

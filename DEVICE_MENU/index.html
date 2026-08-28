@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DEVICE_MENU</title>
+<meta name="description" content="The room the game is played in. Walk to the console and plug in the controller.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="THE DEVICE">
+<meta property="og:title" content="DEVICE_MENU">
+<meta property="og:description" content="NO CONTROLLER.">
+<meta property="og:url" content="https://shadowcrystal.dev/DEVICE_MENU/">
+<meta property="og:image" content="https://shadowcrystal.dev/og/device.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://shadowcrystal.dev/og/device.png">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:#000; overflow:hidden; }
+  body {
+    font-family:'Courier New', Courier, monospace;
+    font-weight:bold; color:#fff; text-transform:uppercase;
+    -webkit-font-smoothing:none; cursor:default;
+  }
+  #room {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:min(100vw, calc(100vh * 4 / 3));
+    height:min(100vh, calc(100vw * 3 / 4));
+    image-rendering:pixelated;
+    background:#000;
+    transition:opacity .5s linear;
+  }
+  .cornerlabel { position:fixed; top:14px; left:16px; font-size:12px; color:#2e2e2e; z-index:5; }
+  #skip {
+    position:fixed; top:12px; right:16px; z-index:5;
+    font-size:12px; color:#5a5a5a; text-decoration:none; letter-spacing:.1em;
+  }
+  #skip:hover, #skip:focus-visible { color:#ffff00; outline:none; }
+  #keys {
+    position:fixed; bottom:26px; left:0; right:0; z-index:5;
+    text-align:center; font-size:11px; color:#2e2e2e; letter-spacing:.08em;
+  }
+  footer {
+    position:fixed; bottom:6px; left:0; right:0; z-index:5;
+    text-align:center; font-size:10px; color:#1c1c1c; letter-spacing:.08em;
+  }
+  footer a { color:#2e2e2e; text-decoration:none; }
+  /* The hand-off: the room whites out into the site the way the console
+     hands over to what it booted. */
+  #flash {
+    position:fixed; inset:0; background:#fff; opacity:0; z-index:50;
+    pointer-events:none; transition:opacity .45s linear;
+  }
+  #failed {
+    display:none; position:fixed; inset:0; z-index:60; background:#000;
+    flex-direction:column; align-items:center; justify-content:center; gap:1.4rem;
+    font-size:17px; line-height:1.9; text-align:center;
+  }
+  #failed a { color:#5a5a5a; text-decoration:none; }
+  #quickstart {
+    position: fixed; right: 16px; bottom: 48px; z-index: 5;
+    padding: 9px 12px; border: 1px solid #5a5a5a;
+    background: #000; color: #fff; font: bold 12px 'Courier New', monospace;
+    letter-spacing: .08em; cursor: pointer;
+  }
+  #quickstart:hover, #quickstart:focus-visible { border-color: #ffff00; color: #ffff00; outline: none; }
+
+  /* ---------- THE FRIEND (rare; unexplained; never mentioned) ----------
+     It used to watch the menu. A dark room suits it better. */
+  #eyes{
+    position:fixed; bottom:14vh; right:9vw; z-index:40;
+    display:none; pointer-events:none;
+  }
+  #eyes span{ display:inline-block; width:7px; height:11px; background:#ff9bd5; }
+  #eyes span + span{ margin-left:12px; background:#ffff00; }
+
+  /* THE TOUCH OVERLAY — the knight's control language (translucent
+     circles, a gradient cross), gated to coarse pointers. It is not
+     always-on chrome: it wakes when a thumb touches the screen and fades
+     back out after a few idle seconds, so the room stays the picture. */
+  #touch { display: none; }
+  @media (pointer: coarse) {
+    #touch {
+      display: block;
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 30;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+    }
+    #touch.awake { opacity: 1; }
+  }
+  #touch .pad, #touch .btn {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.06);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #dpad {
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    width: 148px;
+    height: 148px;
+  }
+  #dpad::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.14), rgba(255,255,255,0.14)) 50% 0 / 34% 100% no-repeat,
+      linear-gradient(rgba(255,255,255,0.14), rgba(255,255,255,0.14)) 0 50% / 100% 34% no-repeat;
+    border-radius: inherit;
+  }
+  #touch .btn {
+    width: 64px;
+    height: 64px;
+    color: rgba(255, 255, 255, 0.55);
+    font: bold 20px/60px ui-monospace, Menlo, monospace;
+    text-align: center;
+  }
+  #touch .btn.down { background: rgba(255, 255, 255, 0.22); }
+  #btnZ {
+    right: max(20px, env(safe-area-inset-right));
+    bottom: calc(max(18px, env(safe-area-inset-bottom)) + 74px);
+  }
+  #btnX {
+    right: calc(max(20px, env(safe-area-inset-right)) + 74px);
+    bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  /* SIDEWAYS — the knight's landscape geometry, mirrored: the pad keeps
+     its size but centres on the left edge (that is where a thumb sits in
+     a landscape grip), and Z/X flank the right edge's centre. */
+  @media (pointer: coarse) and (orientation: landscape) {
+    #dpad {
+      left: max(12px, env(safe-area-inset-left));
+      bottom: auto;
+      top: 55%;
+      transform: translateY(-50%);
+    }
+    #btnZ {
+      right: max(16px, env(safe-area-inset-right));
+      bottom: auto;
+      top: calc(55% - 58px);
+      transform: translateY(-50%);
+    }
+    #btnX {
+      right: calc(max(16px, env(safe-area-inset-right)) + 40px);
+      bottom: auto;
+      top: calc(55% + 30px);
+      transform: translateY(-50%);
+    }
+  }
+</style>
+</head>
+<body>
+<!-- The corner label, SKIP link, key legend and footer are gone from this
+     page by request — the room is bare, like the boot. The attribution
+     footer still ships on the sims' and the other device pages. -->
+
+<canvas id="room" width="640" height="480"
+        aria-label="A room with a television. Walk Kris to the console with the arrow keys and press Z to plug in the controller."></canvas>
+
+<button id="quickstart" type="button">START FIGHT</button>
+
+
+<div id="eyes"><span></span><span></span></div>
+
+<div id="flash"></div>
+
+<div id="touch">
+  <div id="dpad" class="pad"></div>
+  <div id="btnZ" class="btn">Z</div>
+  <div id="btnX" class="btn">X</div>
+</div>
+
+<div id="failed">
+  <p>* THE ROOM DID NOT LOAD.</p>
+  <a href="../index.html">&larr; THE DEVICE</a>
+</div>
+
+<script type="module">
+  import { runRoom } from '../shared/room.js?v=snd3';
+  import { loadPrefs, savePrefs } from '../shared/device.js';
+
+  const canvas = document.getElementById('room');
+  document.getElementById('quickstart').addEventListener('click', () => {
+    location.href = '../DEVICE_KNIGHT/';
+  });
+
+  /* FILL THE DISPLAY, BARS ON THE SHORT AXIS — what the game does in
+     fullscreen. The frame keeps its 4:3 and grows until one axis runs out,
+     so a widescreen gets black down either side and nothing is cropped.
+
+     This deliberately gives up whole-pixel scaling. At a fractional factor
+     `image-rendering: pixelated` hands some source columns n device pixels
+     and their neighbours n + 1, so a one-pixel stem is fat on one letter
+     and thin on the next. The real game makes the same trade at the same
+     place: filling the screen wins over an exact pixel grid. */
+  function fit() {
+    const f = Math.min(innerWidth / 640, innerHeight / 480);
+    const cssW = 640 * f;
+    const cssH = 480 * f;
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+  }
+  addEventListener('resize', fit);
+  fit();
+
+  const prefs = loadPrefs();
+
+  try {
+    const room = await runRoom(canvas, {
+      base: '../assets/room/',
+      mantleBase: '../assets/mantle/',
+      tvBase: '../assets/tv/',
+      soundOn: prefs.soundOn,
+      // Once you have booted it once, the set is on when you walk in.
+      alreadyBooted: prefs.booted === true,
+      onBooted: () => {
+        if (!prefs.booted) { prefs.booted = true; savePrefs(prefs); }
+        // THE BOARD COMES UP IN THE TELEVISION — painted by the room, in the
+        // board's own blue and its own font. Kris stays in front of it and
+        // stops walking, because the board has the keys now.
+        room.suspend(true);
+        // the #keys legend is gone from this page — the board teaches its
+        // own controls
+      },
+    });
+  } catch (err) {
+    console.error('room failed to load:', err);
+    document.getElementById('failed').style.display = 'flex';
+  }
+
+  /* ---------------- the friend (rare, gated, once) ---------------- */
+  if (prefs.flickerOK && !matchMedia('(prefers-reduced-motion: reduce)').matches
+      && Math.random() <= 0.02) {
+    setTimeout(() => {
+      const e = document.getElementById('eyes');
+      e.style.display = 'block';
+      setTimeout(() => { e.style.display = 'none'; }, 150);
+    }, 6000 + Math.random() * 14000);
+  }
+
+  /* ---------------- rare tab whisper ---------------- */
+  if (Math.random() <= 0.05) {
+    setTimeout(() => {
+      const old = document.title;
+      document.title = '*(do not trust the empty slots.)';
+      setTimeout(() => { document.title = old; }, 4000);
+    }, 20000);
+  }
+</script>
+
+<script type="module">
+  // THE THUMB SPEAKS KEYBOARD. The room's input is its keydown handler, so
+  // the overlay dispatches real KeyboardEvents — the room cannot tell a
+  // thumb from an arrow key, and the board menu's up/down/Z work unchanged
+  // once the television has the keys. Per-pointer bookkeeping so one thumb
+  // can hold the pad while the other taps Z.
+  const touchRoot = document.getElementById('touch');
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  if (coarse) {
+    const kd = (key) => window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    const ku = (key) => window.dispatchEvent(new KeyboardEvent('keyup', { key }));
+
+    // wake on any touch, sleep after idle
+    let sleepT = 0;
+    const wake = () => {
+      touchRoot.classList.add('awake');
+      clearTimeout(sleepT);
+      sleepT = setTimeout(() => touchRoot.classList.remove('awake'), 3200);
+    };
+    window.addEventListener('pointerdown', wake);
+    window.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') wake(); });
+
+    // the pad: direction from the touch point's angle off centre, with a
+    // small dead zone; a moving thumb re-aims without lifting
+    const pad = document.getElementById('dpad');
+    let padDir = null;
+    const DIRS = { r: 'ArrowRight', l: 'ArrowLeft', u: 'ArrowUp', d: 'ArrowDown' };
+    const aim = (e) => {
+      const r = pad.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dy = e.clientY - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < r.width * 0.12) return padDir; // dead zone
+      return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u');
+    };
+    const setDir = (dir) => {
+      if (dir === padDir) return;
+      if (padDir) ku(DIRS[padDir]);
+      padDir = dir;
+      if (padDir) kd(DIRS[padDir]);
+    };
+    pad.addEventListener('pointerdown', (e) => {
+      pad.setPointerCapture(e.pointerId);
+      setDir(aim(e));
+      e.preventDefault();
+    });
+    pad.addEventListener('pointermove', (e) => {
+      if (pad.hasPointerCapture(e.pointerId)) setDir(aim(e));
+    });
+    const drop = (e) => { if (pad.hasPointerCapture?.(e.pointerId)) setDir(null); };
+    pad.addEventListener('pointerup', drop);
+    pad.addEventListener('pointercancel', drop);
+
+    // the buttons: press and release map to the key's down and up
+    for (const [id, key] of [['btnZ', 'z'], ['btnX', 'x']]) {
+      const el = document.getElementById(id);
+      el.addEventListener('pointerdown', (e) => {
+        el.setPointerCapture(e.pointerId);
+        el.classList.add('down');
+        kd(key);
+        e.preventDefault();
+      });
+      const up = () => { el.classList.remove('down'); ku(key); };
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    }
+  }
+</script>
+</body>
+
+</html>
